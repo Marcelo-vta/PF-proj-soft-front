@@ -28,7 +28,7 @@ function App() {
       const userRoles = payload['https://musica-insper.com/roles'] || [];
       setRoles(userRoles);
 
-      fetch('http://localhost:8080/tarefa', {
+      fetch('http://18.231.253.225:8080/tarefa', {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer ' + token
@@ -63,7 +63,7 @@ function App() {
   }
 
   function salvarTarefa() {
-    fetch('http://localhost:8080/tarefa', {
+    fetch('http://18.231.253.225:8080/tarefa', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ function App() {
   }
 
   function excluirTarefa(id) {
-    fetch('http://localhost:8080/tarefa/' + id, {
+    fetch('http://18.231.253.225:8080/tarefa/' + id, {
       method: 'DELETE',
       headers: {
         'Authorization': 'Bearer ' + token
