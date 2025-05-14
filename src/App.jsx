@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import './App.css';
 import LoginButton from './components/LoginButton';
-import LogoutButton from './components/LogoutButton'
+import LogoutButton from './components/LogoutButton';
 import { useAuth0 } from '@auth0/auth0-react';
 
 function App() {
-  const [token, setToken] = useState(null)
+  const [token, setToken] = useState(null);
 
-  const [titulo, setTitulo] = useState()
-  const [descricao, setDescricao] = useState()
-  const [tempo, setTempo] = useState()
+  const [titulo, setTitulo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [prioridade, setPrioridade] = useState('');
 
-  const [musicas, setMusicas] = useState([])
-  const [roles, setRoles] = useState([])
+  const [tarefas, setTarefas] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   const {
     user,
@@ -26,25 +24,20 @@ function App() {
   useEffect(() => {
     if (token) {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('Email:', payload['https://musica-insper.com/email'])
-      console.log('Roles:', payload['https://musica-insper.com/roles'])
-      setRoles(payload['https://musica-insper.com/roles'])
+      const email = payload['https://musica-insper.com/email'];
+      const userRoles = payload['https://musica-insper.com/roles'] || [];
+      setRoles(userRoles);
 
-      fetch('http://localhost:8080/musica', {
+      fetch('http://localhost:8080/tarefa', {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer ' + token
         }
-      }).then(response => { 
-        return response.json()
-      }).then(data => { 
-        setMusicas(data)
-      }).catch(error => {
-        alert(error)
-      })
+      }).then(response => response.json())
+        .then(data => setTarefas(data))
+        .catch(error => alert(error));
     }
-
-  }, [token])
+  }, [token]);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -69,9 +62,8 @@ function App() {
     return <LoginButton />;
   }
 
-  function salvarMusica() {
-
-    fetch('http://localhost:8080/musica', {
+  function salvarTarefa() {
+    fetch('http://localhost:8080/tarefa', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,29 +72,21 @@ function App() {
       body: JSON.stringify({
         'titulo': titulo,
         'descricao': descricao,
-        'tempo': tempo
+        'prioridade': prioridade
       })
-    }).then(response => { 
-      return response.json()
-    }).catch(error => {
-      alert(error)
-    })
-
+    }).then(response => response.json())
+      .then(() => window.location.reload())
+      .catch(error => alert(error));
   }
 
-  function excluir(id) {
-
-    fetch('http://localhost:8080/musica/' + id, {
+  function excluirTarefa(id) {
+    fetch('http://localhost:8080/tarefa/' + id, {
       method: 'DELETE',
       headers: {
         'Authorization': 'Bearer ' + token
       }
-    }).then(response => { 
-      return response.json()
-    }).catch(error => {
-      alert(error)
-    })
-
+    }).then(() => window.location.reload())
+      .catch(error => alert(error));
   }
 
   return (
@@ -115,38 +99,43 @@ function App() {
           <LogoutButton />
         </div>
 
-       {roles.includes('ADMIN') && <div>
-          Título: <input type='text' onChange={e => setTitulo(e.target.value)} /><br/>
-          Descrição: <input type='text' onChange={e => setDescricao(e.target.value)} /><br/>
-          Tempo: <input type='text' onChange={e => setTempo(e.target.value)} /><br/>
-          <button onClick={() => salvarMusica()}>Cadastrar</button>
-        </div>
-        }
+        {roles.includes('ADMIN') && (
+          <div>
+            <h3>Criar Tarefa</h3>
+            Título: <input type='text' onChange={e => setTitulo(e.target.value)} /><br />
+            Descrição: <input type='text' onChange={e => setDescricao(e.target.value)} /><br />
+            Prioridade: <input type='number' onChange={e => setPrioridade(e.target.value)} /><br />
+            <button onClick={salvarTarefa}>Cadastrar</button>
+          </div>
+        )}
 
-
-        <div>
-          <table>
-            <thead>
+        <h3>Lista de Tarefas</h3>
+        <table>
+          <thead>
+            <tr>
               <th>Título</th>
               <th>Descrição</th>
-              <th>Tempo</th>
+              <th>Prioridade</th>
               <th>Usuário</th>
-              {roles.includes('ADMIN') && <th>Excluir</th> }
-
-            </thead>
-            <tbody>
-                {musicas.map((musica, index) => {
-                return <tr key={index}>
-                      <td>{musica.titulo}</td>
-                      <td>{musica.descricao}</td>
-                      <td>{musica.tempo}</td>
-                      <td>{musica.email}</td>
-                      {roles.includes('ADMIN') && <td><button onClick={() => excluir(musica.id)}>Excluir</button></td> }
-                    </tr>
-                })}
-            </tbody>
-          </table>
-        </div>
+              {roles.includes('ADMIN') && <th>Ações</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {tarefas.map((tarefa, index) => (
+              <tr key={index}>
+                <td>{tarefa.titulo}</td>
+                <td>{tarefa.descricao}</td>
+                <td>{tarefa.prioridade}</td>
+                <td>{tarefa.email}</td>
+                {roles.includes('ADMIN') && (
+                  <td>
+                    <button onClick={() => excluirTarefa(tarefa.id)}>Excluir</button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
   );
